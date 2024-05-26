@@ -1,6 +1,7 @@
 package timecode_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/spiretechnology/go-timecode"
@@ -170,5 +171,43 @@ func TestTimecodeSequenceDF(t *testing.T) {
 			prevTc = tc
 			prevComp = comp
 		}
+	}
+}
+
+func TestValidity(t *testing.T) {
+	frameNumIn30fps := 0
+	frameNumIn2997fps := 0
+	droppedFrames := 0
+	var diff float64
+	for i := 0; i < 1800*60*24; i++ {
+		diff = float64(frameNumIn30fps)/30. - (float64(frameNumIn2997fps) / 29.97)
+		timecodeStr := fmt.Sprintf("%02d:%02d:%02d;%02d", frameNumIn30fps/108000, (frameNumIn30fps/1800)%60, (frameNumIn30fps/30)%60, frameNumIn30fps%30)
+
+		tc, _ := timecode.Parse(timecodeStr, timecode.Rate_29_97)
+		derivedTs := tc.Seconds()
+		// derivedTs := drop_timecode_to_timestamp(timecodeStr)
+
+		actualTime := float64(frameNumIn2997fps) / 29.97
+
+		derivedTimeCode := timecode.FromFrame(int64(frameNumIn2997fps), timecode.Rate_29_97, true).String()
+		// derivedTimeCode := timestamp_to_drop_timecode(actualTime)
+
+		// fmt.Printf("%d %.3f %s %.3f %s %.3f %d\n", frameNumIn2997fps, actualTime, timecode, derivedTs, derivedTimeCode, diff, droppedFrames)
+
+		if timecodeStr != derivedTimeCode {
+			fmt.Printf("Mismatch %d %.3f %s %.3f %s %.3f %d\n", frameNumIn2997fps, actualTime, timecodeStr, derivedTs, derivedTimeCode, diff, droppedFrames)
+		}
+
+		if (actualTime - derivedTs) > 0.03 {
+			fmt.Printf("Mismatch %d %.3f %s %.3f %s %.3f %d\n", frameNumIn2997fps, actualTime, timecodeStr, derivedTs, derivedTimeCode, diff, droppedFrames)
+		}
+
+		if (frameNumIn30fps+1)%1800 == 0 && ((frameNumIn30fps+1)%18000) != 0 {
+			frameNumIn30fps += 3
+			droppedFrames += 2
+		} else {
+			frameNumIn30fps++
+		}
+		frameNumIn2997fps++
 	}
 }

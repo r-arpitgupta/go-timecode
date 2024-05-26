@@ -27,6 +27,19 @@ func (t *Timecode) Frame() int64 {
 	return t.frame
 }
 
+func (t *Timecode) Seconds() float64 {
+	switch t.rate.Str {
+	case "29.97":
+		return float64(t.frame) / 29.97
+	case "23.976":
+		return float64(t.frame) / 23.976
+	case "59.94":
+		return float64(t.frame) / 59.94
+	default:
+		return float64(t.frame) / float64(t.rate.Nominal)
+	}
+}
+
 func (t *Timecode) componentsNDF(frame int64) Components {
 	// Track the remaining frames
 	frames := frame % int64(t.rate.Nominal)
