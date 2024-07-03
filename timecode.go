@@ -28,6 +28,9 @@ func (t *Timecode) Frame() int64 {
 }
 
 func (t *Timecode) Seconds() float64 {
+	if !t.dropFrame {
+		return float64(t.frame) / float64(t.rate.Nominal)
+	}
 	switch t.rate.Str {
 	case "29.97":
 		return float64(t.frame) / 29.97
